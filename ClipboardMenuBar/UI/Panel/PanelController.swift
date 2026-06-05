@@ -7,7 +7,7 @@ final class PanelController: ObservableObject {
     private let pasteService: PasteService
     private unowned let appServices: AppServices
     private lazy var panel: ClipboardPanel = makePanel()
-    private var targetApplication: NSRunningApplication?
+    private var pasteTarget = PasteTarget(application: nil, focusedElement: nil)
 
     init(clipboardStore: ClipboardStore, pasteService: PasteService, appServices: AppServices) {
         self.clipboardStore = clipboardStore
@@ -38,7 +38,7 @@ final class PanelController: ObservableObject {
 
     func show() {
         appServices.refreshSystemState()
-        targetApplication = NSWorkspace.shared.frontmostApplication
+        pasteTarget = pasteService.captureTarget(for: NSWorkspace.shared.frontmostApplication)
         updateContent()
         positionPanel()
         panel.orderFrontRegardless()
@@ -46,12 +46,15 @@ final class PanelController: ObservableObject {
     }
 
     func hide() {
+        pasteTarget = PasteTarget(application: nil, focusedElement: nil)
         panel.hideImmediately()
     }
 
     @discardableResult
     func paste(_ item: ClipboardItem) -> Bool {
-        pasteService.paste(item: item, using: clipboardStore, panel: panel, targetApplication: targetApplication)
+        let target = pasteTarget
+        pasteTarget = PasteTarget(application: nil, focusedElement: nil)
+        return pasteService.paste(item: item, using: clipboardStore, panel: panel, target: target)
     }
 
     private func updateContent() {
