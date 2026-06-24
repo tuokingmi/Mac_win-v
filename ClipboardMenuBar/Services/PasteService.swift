@@ -1,6 +1,5 @@
 import AppKit
 import ApplicationServices
-import CryptoKit
 import Foundation
 
 struct PasteTarget {
@@ -8,8 +7,20 @@ struct PasteTarget {
     let focusedElement: AXUIElement?
 }
 
+enum PastePayload {
+    case text(String)
+    case image(NSImage)
+}
+
+enum PastePlan {
+    case text(String)
+    case sequential([PastePayload])
+}
+
 @MainActor
 final class PasteService {
+    private let multiPasteInterval: UInt64 = 220_000_000
+
     static func hasAccessibilityPermission(prompt: Bool) -> Bool {
         let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: prompt] as CFDictionary
         return AXIsProcessTrustedWithOptions(options)
@@ -38,50 +49,58 @@ final class PasteService {
         )
     }
 
-    func paste(
-        item: ClipboardItem,
-        using store: ClipboardStore,
-        panel: ClipboardPanel,
-        target: PasteTarget
-    ) -> Bool {
-        let pasteboard = NSPasteboard.general
-        let signature: String
-        let textToInsert: String?
+    func makePlan(for items: [ClipboardItem], using store: ClipboardStore) -> PastePlan? {
+        guard items.isEmpty == false else { return nil }
 
-        switch item.kind {
-        case .text:
-            guard let text = item.textContent else { return false }
-            signature = makeSignature(for: Data(text.utf8), prefix: "text")
-            store.suppressNextCapture(signature: signature)
-            pasteboard.clearContents()
-            pasteboard.setString(text, forType: .string)
-            textToInsert = text
-        case .image:
-            guard let image = store.image(for: item),
-                  let tiffData = image.tiffRepresentation else { return false }
-            signature = makeSignature(for: tiffData, prefix: "image")
-            store.suppressNextCapture(signature: signature)
-            pasteboard.clearContents()
-            pasteboard.writeObjects([image])
-            textToInsert = nil
+        if items.allSatisfy({ $0.kind == .text }) {
+            let texts = items.compactMap(\.textContent)
+            guard texts.count == items.count else { return nil }
+            return .text(texts.joined(separator: "\n"))
         }
 
-        panel.hideImmediately()
+        var payloads: [PastePayload] = []
+        for item in items {
+            switch item.kind {
+            case .text:
+                guard let text = item.textContent else { return nil }
+                payloads.append(.text(text))
+            case .image:
+                guard let image = store.image(for: item) else { return nil }
+                payloads.append(.image(image))
+            }
+        }
+        return .sequential(payloads)
+    }
 
+    func execute(_ plan: PastePlan, using store: ClipboardStore, target: PasteTarget) {
+        let pasteboard = NSPasteboard.general
         let canAutoPaste = Self.hasAccessibilityPermission(prompt: false)
 
-        if canAutoPaste, let textToInsert, insertText(textToInsert, into: target.focusedElement) {
-            activateTargetApplication(target.application)
-            return true
-        }
+        switch plan {
+        case .text(let text):
+            write(.text(text), to: pasteboard)
+            markInternalWrite(pasteboard: pasteboard, store: store)
 
-        if canAutoPaste {
-            scheduleKeyboardPaste(to: target.application)
-        } else {
-            activateTargetApplication(target.application)
-        }
+            if canAutoPaste, insertText(text, into: target.focusedElement) {
+                activateTargetApplication(target.application)
+                return
+            }
 
-        return true
+            if canAutoPaste {
+                scheduleKeyboardPaste(to: target.application)
+            } else {
+                activateTargetApplication(target.application)
+            }
+
+        case .sequential(let payloads):
+            if canAutoPaste {
+                executeSequential(payloads, pasteboard: pasteboard, store: store, target: target)
+            } else {
+                write(payloads, to: pasteboard)
+                markInternalWrite(pasteboard: pasteboard, store: store)
+                activateTargetApplication(target.application)
+            }
+        }
     }
 
     private func activateTargetApplication(_ application: NSRunningApplication?) {
@@ -102,6 +121,65 @@ final class PasteService {
 
             postCommandV(to: application)
         }
+    }
+
+    private func executeSequential(
+        _ payloads: [PastePayload],
+        pasteboard: NSPasteboard,
+        store: ClipboardStore,
+        target: PasteTarget
+    ) {
+        Task { @MainActor in
+            activateTargetApplication(target.application)
+            await waitForActivation(target.application)
+
+            for (index, payload) in payloads.enumerated() {
+                write(payload, to: pasteboard)
+                markInternalWrite(pasteboard: pasteboard, store: store)
+                postCommandV(to: target.application)
+
+                if index < payloads.count - 1 {
+                    try? await Task.sleep(nanoseconds: multiPasteInterval)
+                }
+            }
+        }
+    }
+
+    private func waitForActivation(_ application: NSRunningApplication?) async {
+        for delay in [120_000_000, 240_000_000, 400_000_000] {
+            if application?.isActive == true {
+                return
+            }
+            try? await Task.sleep(nanoseconds: UInt64(delay))
+            activateTargetApplication(application)
+        }
+    }
+
+    private func write(_ payload: PastePayload, to pasteboard: NSPasteboard) {
+        pasteboard.clearContents()
+        switch payload {
+        case .text(let text):
+            pasteboard.setString(text, forType: .string)
+        case .image(let image):
+            pasteboard.writeObjects([image])
+        }
+    }
+
+    private func write(_ payloads: [PastePayload], to pasteboard: NSPasteboard) {
+        pasteboard.clearContents()
+        let objects: [NSPasteboardWriting] = payloads.map { payload in
+            switch payload {
+            case .text(let text):
+                return text as NSString
+            case .image(let image):
+                return image
+            }
+        }
+        pasteboard.writeObjects(objects)
+    }
+
+    private func markInternalWrite(pasteboard: NSPasteboard, store: ClipboardStore) {
+        store.suppressCapture(changeCount: pasteboard.changeCount)
     }
 
     private func postCommandV(to application: NSRunningApplication?) {
@@ -196,10 +274,5 @@ final class PasteService {
         var mutableRange = range
         guard let value = AXValueCreate(.cfRange, &mutableRange) else { return }
         _ = AXUIElementSetAttributeValue(element, kAXSelectedTextRangeAttribute as CFString, value)
-    }
-
-    private func makeSignature(for data: Data, prefix: String) -> String {
-        let hash = SHA256.hash(data: data).compactMap { String(format: "%02x", $0) }.joined()
-        return "\(prefix)-\(hash)"
     }
 }

@@ -20,7 +20,24 @@
 		A0000000000000000000002B /* ClipboardRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000000B /* ClipboardRowView.swift */; };
 		A0000000000000000000002C /* MenuBarContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000000C /* MenuBarContent.swift */; };
 		A0000000000000000000002D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000000D /* Assets.xcassets */; };
+		B00000000000000000000021 /* TestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000001 /* TestSupport.swift */; };
+		B00000000000000000000022 /* NextOpenPromotionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000002 /* NextOpenPromotionTests.swift */; };
+		B00000000000000000000023 /* ClipboardOrderingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000003 /* ClipboardOrderingTests.swift */; };
+		B00000000000000000000024 /* CaptureReservationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000004 /* CaptureReservationTests.swift */; };
+		B00000000000000000000025 /* ClipboardSelectionStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000005 /* ClipboardSelectionStateTests.swift */; };
+		B00000000000000000000026 /* PastePlanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000006 /* PastePlanTests.swift */; };
+		B00000000000000000000027 /* PasteboardSuppressionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000007 /* PasteboardSuppressionTests.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		B00000000000000000000040 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A0000000000000000000001E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A0000000000000000000001A;
+			remoteInfo = ClipboardMenuBar;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		A00000000000000000000001 /* ClipboardMenuBarApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardMenuBarApp.swift; sourceTree = "<group>"; };
@@ -38,10 +55,25 @@
 		A0000000000000000000000D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A0000000000000000000000E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Resources/Info.plist; sourceTree = "<group>"; };
 		A0000000000000000000000F /* ClipboardMenuBar.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ClipboardMenuBar.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B00000000000000000000001 /* TestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestSupport.swift; sourceTree = "<group>"; };
+		B00000000000000000000002 /* NextOpenPromotionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NextOpenPromotionTests.swift; sourceTree = "<group>"; };
+		B00000000000000000000003 /* ClipboardOrderingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardOrderingTests.swift; sourceTree = "<group>"; };
+		B00000000000000000000004 /* CaptureReservationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureReservationTests.swift; sourceTree = "<group>"; };
+		B00000000000000000000005 /* ClipboardSelectionStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardSelectionStateTests.swift; sourceTree = "<group>"; };
+		B00000000000000000000006 /* PastePlanTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PastePlanTests.swift; sourceTree = "<group>"; };
+		B00000000000000000000007 /* PasteboardSuppressionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasteboardSuppressionTests.swift; sourceTree = "<group>"; };
+		B0000000000000000000000F /* ClipboardMenuBarTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ClipboardMenuBarTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		A00000000000000000000030 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B00000000000000000000030 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -55,6 +87,7 @@
 			isa = PBXGroup;
 			children = (
 				A00000000000000000000011 /* ClipboardMenuBar */,
+				B00000000000000000000011 /* ClipboardMenuBarTests */,
 				A00000000000000000000012 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -75,8 +108,23 @@
 			isa = PBXGroup;
 			children = (
 				A0000000000000000000000F /* ClipboardMenuBar.app */,
+				B0000000000000000000000F /* ClipboardMenuBarTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		B00000000000000000000011 /* ClipboardMenuBarTests */ = {
+			isa = PBXGroup;
+			children = (
+				B00000000000000000000001 /* TestSupport.swift */,
+				B00000000000000000000002 /* NextOpenPromotionTests.swift */,
+				B00000000000000000000003 /* ClipboardOrderingTests.swift */,
+				B00000000000000000000004 /* CaptureReservationTests.swift */,
+				B00000000000000000000005 /* ClipboardSelectionStateTests.swift */,
+				B00000000000000000000006 /* PastePlanTests.swift */,
+				B00000000000000000000007 /* PasteboardSuppressionTests.swift */,
+			);
+			path = ClipboardMenuBarTests;
 			sourceTree = "<group>";
 		};
 		A00000000000000000000013 /* Models */ = {
@@ -168,6 +216,26 @@
 			productReference = A0000000000000000000000F /* ClipboardMenuBar.app */;
 			productType = "com.apple.product-type.application";
 		};
+		B0000000000000000000001A /* ClipboardMenuBarTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B0000000000000000000001B /* Build configuration list for PBXNativeTarget "ClipboardMenuBarTests" */;
+			buildPhases = (
+				B0000000000000000000001C /* Sources */,
+				B00000000000000000000030 /* Frameworks */,
+				B0000000000000000000001D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				B00000000000000000000041 /* PBXTargetDependency */,
+			);
+			name = ClipboardMenuBarTests;
+			packageProductDependencies = (
+			);
+			productName = ClipboardMenuBarTests;
+			productReference = B0000000000000000000000F /* ClipboardMenuBarTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -180,6 +248,10 @@
 				TargetAttributes = {
 					A0000000000000000000001A = {
 						CreatedOnToolsVersion = 16.0;
+					};
+					B0000000000000000000001A = {
+						CreatedOnToolsVersion = 16.0;
+						TestTargetID = A0000000000000000000001A;
 					};
 				};
 			};
@@ -198,6 +270,7 @@
 			projectRoot = "";
 			targets = (
 				A0000000000000000000001A /* ClipboardMenuBar */,
+				B0000000000000000000001A /* ClipboardMenuBarTests */,
 			);
 		};
 /* End PBXProject section */
@@ -208,6 +281,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				A0000000000000000000002D /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B0000000000000000000001D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -233,7 +313,29 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		B0000000000000000000001C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B00000000000000000000021 /* TestSupport.swift in Sources */,
+				B00000000000000000000022 /* NextOpenPromotionTests.swift in Sources */,
+				B00000000000000000000023 /* ClipboardOrderingTests.swift in Sources */,
+				B00000000000000000000024 /* CaptureReservationTests.swift in Sources */,
+				B00000000000000000000025 /* ClipboardSelectionStateTests.swift in Sources */,
+				B00000000000000000000026 /* PastePlanTests.swift in Sources */,
+				B00000000000000000000027 /* PasteboardSuppressionTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		B00000000000000000000041 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A0000000000000000000001A /* ClipboardMenuBar */;
+			targetProxy = B00000000000000000000040 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		A00000000000000000000031 /* Debug */ = {
@@ -245,6 +347,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_APP_SANDBOX = NO;
+				ENABLE_TESTABILITY = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ClipboardMenuBar/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -258,6 +361,7 @@
 				SDKROOT = macosx;
 				SUPPORTED_PLATFORMS = macosx;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
@@ -288,6 +392,54 @@
 			};
 			name = Release;
 		};
+		B00000000000000000000031 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.ClipboardMenuBarTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ClipboardMenuBar.app/Contents/MacOS/ClipboardMenuBar";
+			};
+			name = Debug;
+		};
+		B00000000000000000000032 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.ClipboardMenuBarTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ClipboardMenuBar.app/Contents/MacOS/ClipboardMenuBar";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -305,6 +457,15 @@
 			buildConfigurations = (
 				A00000000000000000000031 /* Debug */,
 				A00000000000000000000032 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B0000000000000000000001B /* Build configuration list for PBXNativeTarget "ClipboardMenuBarTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B00000000000000000000031 /* Debug */,
+				B00000000000000000000032 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

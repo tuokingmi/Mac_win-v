@@ -9,7 +9,6 @@ final class ClipboardMonitor {
     private let pasteboard = NSPasteboard.general
     private var timer: Timer?
     private var lastChangeCount: Int
-    private var processingImageSignature: String?
 
     init(clipboardStore: ClipboardStore, imageStorage: ImageStorage) {
         self.clipboardStore = clipboardStore
@@ -35,8 +34,15 @@ final class ClipboardMonitor {
     }
 
     private func captureIfNeeded() {
-        guard pasteboard.changeCount != lastChangeCount else { return }
-        lastChangeCount = pasteboard.changeCount
+        let currentChangeCount = pasteboard.changeCount
+        guard currentChangeCount != lastChangeCount else { return }
+        lastChangeCount = currentChangeCount
+
+        guard clipboardStore.consumeCaptureSuppression(changeCount: currentChangeCount) == false else {
+            return
+        }
+
+        let copiedAt = Date()
 
         let imageTypes: Set<NSPasteboard.PasteboardType> = [.tiff, .png]
         let stringTypes: Set<NSPasteboard.PasteboardType> = [.string]
@@ -54,39 +60,43 @@ final class ClipboardMonitor {
         }
 
         if preferImage, let tiffData = pasteboard.data(forType: .tiff) ?? pasteboard.data(forType: .png) {
-            captureImage(tiffData: tiffData)
+            captureImage(tiffData: tiffData, copiedAt: copiedAt)
             return
         }
 
         if let text = pasteboard.string(forType: .string), !text.isEmpty {
             let signature = digest(for: Data(text.utf8), prefix: "text")
-            clipboardStore.saveText(text, signature: signature)
+            switch clipboardStore.reserveExternalCapture(signature: signature, copiedAt: copiedAt) {
+            case .existing, .alreadyInFlight:
+                return
+            case .new(let token):
+                clipboardStore.commitText(text, token: token)
+            }
             return
         }
 
         // Last resort: try image even if text types appeared first but no text was found
         if let tiffData = pasteboard.data(forType: .tiff) ?? pasteboard.data(forType: .png) {
-            captureImage(tiffData: tiffData)
+            captureImage(tiffData: tiffData, copiedAt: copiedAt)
         }
     }
 
-    private func captureImage(tiffData: Data) {
+    private func captureImage(tiffData: Data, copiedAt: Date) {
         let signature = digest(for: tiffData, prefix: "image")
-        guard processingImageSignature != signature else { return }
-        processingImageSignature = signature
+        let reservation = clipboardStore.reserveExternalCapture(signature: signature, copiedAt: copiedAt)
+        guard case .new(let token) = reservation else { return }
 
         let imageStorage = self.imageStorage
         Task.detached(priority: .utility) { [weak self] in
             do {
                 let payload = try imageStorage.store(imageData: tiffData)
                 await MainActor.run {
-                    self?.clipboardStore.saveImage(payload: payload, signature: signature)
-                    self?.processingImageSignature = nil
+                    self?.clipboardStore.commitImage(payload: payload, token: token)
                 }
             } catch {
                 await MainActor.run {
                     NSLog("Failed to persist clipboard image: %@", error.localizedDescription)
-                    self?.processingImageSignature = nil
+                    self?.clipboardStore.cancelCapture(token)
                 }
             }
         }

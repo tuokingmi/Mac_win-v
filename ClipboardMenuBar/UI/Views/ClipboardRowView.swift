@@ -1,35 +1,12 @@
-import AppKit
 import SwiftUI
-
-struct ClipboardPreviewImageView: View {
-    let item: ClipboardItem
-
-    var body: some View {
-        Group {
-            if item.kind == .image, let previewData = item.previewData, let image = NSImage(data: previewData) {
-                Image(nsImage: image)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 52, height: 52)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-            } else {
-                Image(systemName: item.kind == .text ? "text.alignleft" : "photo")
-                    .font(.system(size: 18, weight: .medium))
-                    .frame(width: 52, height: 52)
-                    .background(Color.secondary.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
-            }
-        }
-    }
-}
 
 struct ClipboardRowView: View {
     let item: ClipboardItem
-    let isSelected: Bool
+    let isFocused: Bool
+    let isMultiSelected: Bool
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            ClipboardPreviewImageView(item: item)
-
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 4) {
                     if item.isPinned {
@@ -49,14 +26,34 @@ struct ClipboardRowView: View {
             }
 
             Spacer()
+
+            if isMultiSelected {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(Color.accentColor)
+            }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
-        .background(backgroundStyle, in: RoundedRectangle(cornerRadius: 12))
+        .background(backgroundStyle, in: RoundedRectangle(cornerRadius: 8))
+        .overlay {
+            if isFocused {
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color.accentColor.opacity(isMultiSelected ? 0.8 : 0.45), lineWidth: 1)
+            }
+        }
     }
 
     private var backgroundStyle: some ShapeStyle {
-        isSelected ? AnyShapeStyle(Color.accentColor.opacity(0.18)) : AnyShapeStyle(Color.white.opacity(0.04))
+        if isMultiSelected {
+            return AnyShapeStyle(Color.accentColor.opacity(0.18))
+        }
+
+        if isFocused {
+            return AnyShapeStyle(Color.accentColor.opacity(0.08))
+        }
+
+        return AnyShapeStyle(Color.white.opacity(0.04))
     }
 
     private var title: String {
