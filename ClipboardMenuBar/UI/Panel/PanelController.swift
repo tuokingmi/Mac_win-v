@@ -10,6 +10,10 @@ final class PanelController: ObservableObject {
     private var pasteTarget = PasteTarget(application: nil, focusedElement: nil)
     private var activeSessionPromotions: [NextOpenPromotion] = []
 
+    var isPanelVisible: Bool {
+        panel.isVisible
+    }
+
     init(clipboardStore: ClipboardStore, pasteService: PasteService, appServices: AppServices) {
         self.clipboardStore = clipboardStore
         self.pasteService = pasteService

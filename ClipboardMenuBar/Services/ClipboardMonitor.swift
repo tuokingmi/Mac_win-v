@@ -1,5 +1,4 @@
 import AppKit
-import CryptoKit
 import Foundation
 
 @MainActor
@@ -42,54 +41,43 @@ final class ClipboardMonitor {
             return
         }
 
+        guard let content = ClipboardPasteboardContent.snapshot(from: pasteboard) else { return }
         let copiedAt = Date()
 
-        let imageTypes: Set<NSPasteboard.PasteboardType> = [.tiff, .png]
-        let stringTypes: Set<NSPasteboard.PasteboardType> = [.string]
-        let types = pasteboard.types ?? []
-        let firstImageIndex = types.firstIndex(where: { imageTypes.contains($0) })
-        let firstStringIndex = types.firstIndex(where: { stringTypes.contains($0) })
-
-        // If image types appear before string types in the pasteboard, the source
-        // primarily intends to provide an image (e.g., copying an image from a browser).
-        let preferImage: Bool
-        if let imgIdx = firstImageIndex, let strIdx = firstStringIndex {
-            preferImage = imgIdx < strIdx
-        } else {
-            preferImage = firstImageIndex != nil
-        }
-
-        if preferImage, let tiffData = pasteboard.data(forType: .tiff) ?? pasteboard.data(forType: .png) {
-            captureImage(tiffData: tiffData, copiedAt: copiedAt)
-            return
-        }
-
-        if let text = pasteboard.string(forType: .string), !text.isEmpty {
-            let signature = digest(for: Data(text.utf8), prefix: "text")
-            switch clipboardStore.reserveExternalCapture(signature: signature, copiedAt: copiedAt) {
+        switch content.payload {
+        case .text(let text):
+            switch clipboardStore.reserveExternalCapture(
+                signature: content.signature,
+                copiedAt: copiedAt,
+                changeCount: currentChangeCount
+            ) {
             case .existing, .alreadyInFlight:
                 return
             case .new(let token):
                 clipboardStore.commitText(text, token: token)
             }
-            return
-        }
-
-        // Last resort: try image even if text types appeared first but no text was found
-        if let tiffData = pasteboard.data(forType: .tiff) ?? pasteboard.data(forType: .png) {
-            captureImage(tiffData: tiffData, copiedAt: copiedAt)
+        case .image(let imageData):
+            captureImage(
+                imageData: imageData,
+                signature: content.signature,
+                copiedAt: copiedAt,
+                changeCount: currentChangeCount
+            )
         }
     }
 
-    private func captureImage(tiffData: Data, copiedAt: Date) {
-        let signature = digest(for: tiffData, prefix: "image")
-        let reservation = clipboardStore.reserveExternalCapture(signature: signature, copiedAt: copiedAt)
+    private func captureImage(imageData: Data, signature: String, copiedAt: Date, changeCount: Int) {
+        let reservation = clipboardStore.reserveExternalCapture(
+            signature: signature,
+            copiedAt: copiedAt,
+            changeCount: changeCount
+        )
         guard case .new(let token) = reservation else { return }
 
         let imageStorage = self.imageStorage
         Task.detached(priority: .utility) { [weak self] in
             do {
-                let payload = try imageStorage.store(imageData: tiffData)
+                let payload = try imageStorage.store(imageData: imageData)
                 await MainActor.run {
                     self?.clipboardStore.commitImage(payload: payload, token: token)
                 }
@@ -100,10 +88,5 @@ final class ClipboardMonitor {
                 }
             }
         }
-    }
-
-    private func digest(for data: Data, prefix: String) -> String {
-        let hash = SHA256.hash(data: data).compactMap { String(format: "%02x", $0) }.joined()
-        return "\(prefix)-\(hash)"
     }
 }

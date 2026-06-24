@@ -24,6 +24,7 @@ final class AppServices: ObservableObject {
     let modelContainer: ModelContainer
 
     private var monitor: ClipboardMonitor?
+    private var directPasteObserver: DirectPasteObserver?
     private var hotKeyManager: HotKeyManager?
     private var permissionRefreshTimer: Timer?
 
@@ -50,6 +51,7 @@ final class AppServices: ObservableObject {
         let pasteService = PasteService()
         let panelController = PanelController(clipboardStore: store, pasteService: pasteService, appServices: self)
         let monitor = ClipboardMonitor(clipboardStore: store, imageStorage: imageStorage)
+        let directPasteObserver = DirectPasteObserver(clipboardStore: store, panelController: panelController)
         let hotKeyManager = HotKeyManager { [weak panelController] in
             panelController?.toggle()
         }
@@ -57,9 +59,11 @@ final class AppServices: ObservableObject {
         self.clipboardStore = store
         self.panelController = panelController
         self.monitor = monitor
+        self.directPasteObserver = directPasteObserver
         self.hotKeyManager = hotKeyManager
 
         monitor.start()
+        directPasteObserver.start()
         hotKeyManager.registerOptionV()
         refreshSystemState()
     }

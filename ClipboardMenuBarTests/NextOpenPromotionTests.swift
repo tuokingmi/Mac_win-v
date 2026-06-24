@@ -86,4 +86,85 @@ final class NextOpenPromotionTests: XCTestCase {
         store.finishPresentationSession(promotions: activeAgain, at: base.addingTimeInterval(50))
         XCTAssertEqual(store.pendingPromotionsForTesting().first?.copiedAt, base.addingTimeInterval(40))
     }
+
+    func testDirectPasteRemovesMatchingPendingPromotion() throws {
+        let store = try makeTestStore()
+        let base = Date(timeIntervalSince1970: 7_000)
+        let item = insertText("A", signature: "text-a", copiedAt: base, into: store)
+
+        XCTAssertTrue(store.markDirectPasteUsed(signature: "text-a", changeCount: 100, at: base.addingTimeInterval(10)))
+        XCTAssertTrue(store.consumeEligibleNextOpenPromotions(at: base.addingTimeInterval(11)).isEmpty)
+        XCTAssertEqual(store.fetchItems().map(\.id), [item.id])
+    }
+
+    func testDirectPasteBeforeCaptureStillSavesHistoryWithoutPromotion() throws {
+        let store = try makeTestStore()
+        let base = Date(timeIntervalSince1970: 8_000)
+
+        XCTAssertFalse(store.markDirectPasteUsed(signature: "text-race", changeCount: 200, at: base.addingTimeInterval(1)))
+        guard case .new(let token) = store.reserveExternalCapture(
+            signature: "text-race",
+            copiedAt: base.addingTimeInterval(2),
+            changeCount: 200
+        ) else {
+            XCTFail("Expected new reservation")
+            return
+        }
+
+        store.commitText("Race", token: token)
+        XCTAssertEqual(store.fetchItems().map(\.id), [token.id])
+        XCTAssertTrue(store.consumeEligibleNextOpenPromotions(at: base.addingTimeInterval(3)).isEmpty)
+    }
+
+    func testOldDirectPasteRecordDoesNotBlockLaterCopyWithNewChangeCount() throws {
+        let store = try makeTestStore()
+        let base = Date(timeIntervalSince1970: 9_000)
+        let item = insertText("A", signature: "same-text", copiedAt: base, into: store)
+
+        XCTAssertTrue(store.markDirectPasteUsed(signature: "same-text", changeCount: 300, at: base.addingTimeInterval(1)))
+        XCTAssertEqual(
+            store.reserveExternalCapture(
+                signature: "same-text",
+                copiedAt: base.addingTimeInterval(10),
+                changeCount: 301
+            ),
+            .existing(item.id)
+        )
+        XCTAssertEqual(
+            store.consumeEligibleNextOpenPromotions(at: base.addingTimeInterval(11)).map(\.itemID),
+            [item.id]
+        )
+    }
+
+    func testDirectPasteWithDifferentSignatureDoesNotRemoveOtherPromotions() throws {
+        let store = try makeTestStore()
+        let base = Date(timeIntervalSince1970: 10_000)
+        let itemA = insertText("A", signature: "text-a", copiedAt: base, into: store)
+        let itemB = insertText("B", signature: "text-b", copiedAt: base.addingTimeInterval(1), into: store)
+
+        XCTAssertFalse(store.markDirectPasteUsed(signature: "text-c", changeCount: 400, at: base.addingTimeInterval(2)))
+        XCTAssertEqual(
+            store.consumeEligibleNextOpenPromotions(at: base.addingTimeInterval(3)).map(\.itemID),
+            [itemB.id, itemA.id]
+        )
+    }
+
+    func testDirectPasteRemovesInFlightImagePromotionButCommitStillSavesHistory() throws {
+        let store = try makeTestStore()
+        let base = Date(timeIntervalSince1970: 11_000)
+        guard case .new(let token) = store.reserveExternalCapture(
+            signature: "image-a",
+            copiedAt: base,
+            changeCount: 500
+        ) else {
+            XCTFail("Expected new reservation")
+            return
+        }
+
+        XCTAssertTrue(store.markDirectPasteUsed(signature: "image-a", changeCount: 500, at: base.addingTimeInterval(1)))
+        store.commitImage(payload: try makeStoredImagePayload(), token: token)
+
+        XCTAssertEqual(store.fetchItems().map(\.id), [token.id])
+        XCTAssertTrue(store.consumeEligibleNextOpenPromotions(at: base.addingTimeInterval(2)).isEmpty)
+    }
 }

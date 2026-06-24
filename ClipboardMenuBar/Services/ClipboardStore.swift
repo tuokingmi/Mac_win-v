@@ -33,6 +33,16 @@ private struct InFlightCapture {
     var copiedAt: Date
 }
 
+private struct DirectPasteUse: Equatable {
+    let signature: String
+    let changeCount: Int
+    let usedAt: Date
+
+    func isExpired(at now: Date) -> Bool {
+        now >= usedAt.addingTimeInterval(NextOpenPromotion.validityInterval)
+    }
+}
+
 @MainActor
 final class ClipboardStore: ObservableObject {
     private let modelContainer: ModelContainer?
@@ -42,6 +52,7 @@ final class ClipboardStore: ObservableObject {
     private var pendingNextOpenPromotions: [NextOpenPromotion] = []
     private var inFlightCaptures: [String: InFlightCapture] = [:]
     private var internalPasteboardChangeCounts: Set<Int> = []
+    private var directPasteUses: [DirectPasteUse] = []
 
     init(modelContext: ModelContext, imageStorage: ImageStorage, modelContainer: ModelContainer? = nil) {
         self.modelContainer = modelContainer
@@ -85,28 +96,67 @@ final class ClipboardStore: ObservableObject {
         internalPasteboardChangeCounts.insert(changeCount)
     }
 
+    func isCaptureSuppressed(changeCount: Int) -> Bool {
+        internalPasteboardChangeCounts.contains(changeCount)
+    }
+
     func consumeCaptureSuppression(changeCount: Int) -> Bool {
         internalPasteboardChangeCounts = internalPasteboardChangeCounts.filter { $0 >= changeCount }
         return internalPasteboardChangeCounts.remove(changeCount) != nil
     }
 
-    func reserveExternalCapture(signature: String, copiedAt: Date = .now) -> ClipboardCaptureReservation {
+    func reserveExternalCapture(
+        signature: String,
+        copiedAt: Date = .now,
+        changeCount: Int? = nil
+    ) -> ClipboardCaptureReservation {
+        let shouldPromote = shouldPromoteNextOpen(signature: signature, changeCount: changeCount, at: copiedAt)
+
         if var inFlight = inFlightCaptures[signature] {
             inFlight.copiedAt = copiedAt
             inFlightCaptures[signature] = inFlight
-            enqueueNextOpenPromotion(itemID: inFlight.token.id, copiedAt: copiedAt)
+            if shouldPromote {
+                enqueueNextOpenPromotion(itemID: inFlight.token.id, copiedAt: copiedAt)
+            }
             return .alreadyInFlight(inFlight.token.id)
         }
 
         if let item = latestItem(), item.pasteboardSignature == signature {
-            enqueueNextOpenPromotion(itemID: item.id, copiedAt: copiedAt)
+            if shouldPromote {
+                enqueueNextOpenPromotion(itemID: item.id, copiedAt: copiedAt)
+            }
             return .existing(item.id)
         }
 
         let token = ClipboardCaptureToken(id: UUID(), signature: signature)
         inFlightCaptures[signature] = InFlightCapture(token: token, copiedAt: copiedAt)
-        enqueueNextOpenPromotion(itemID: token.id, copiedAt: copiedAt)
+        if shouldPromote {
+            enqueueNextOpenPromotion(itemID: token.id, copiedAt: copiedAt)
+        }
         return .new(token)
+    }
+
+    @discardableResult
+    func markDirectPasteUsed(signature: String, changeCount: Int, at now: Date = .now) -> Bool {
+        pruneDirectPasteUses(at: now)
+
+        let use = DirectPasteUse(signature: signature, changeCount: changeCount, usedAt: now)
+        if directPasteUses.contains(where: { $0.signature == signature && $0.changeCount == changeCount }) == false {
+            directPasteUses.append(use)
+        }
+
+        let matchingIDs = itemIDs(matchingSignature: signature)
+        let previousCount = pendingNextOpenPromotions.count
+        pendingNextOpenPromotions.removeAll { matchingIDs.contains($0.itemID) }
+        let removedMatchingPromotion = pendingNextOpenPromotions.count != previousCount
+
+        pendingNextOpenPromotions.removeAll { !$0.isEligible(at: now) }
+        pendingNextOpenPromotions.sort { $0.copiedAt > $1.copiedAt }
+
+        if removedMatchingPromotion {
+            objectWillChange.send()
+        }
+        return removedMatchingPromotion
     }
 
     func commitText(_ text: String, token: ClipboardCaptureToken) {
@@ -228,8 +278,32 @@ final class ClipboardStore: ObservableObject {
         pendingNextOpenPromotions.sort { $0.copiedAt > $1.copiedAt }
     }
 
+    private func shouldPromoteNextOpen(signature: String, changeCount: Int?, at now: Date) -> Bool {
+        pruneDirectPasteUses(at: now)
+        guard let changeCount else { return true }
+        return directPasteUses.contains { $0.signature == signature && $0.changeCount == changeCount } == false
+    }
+
+    private func pruneDirectPasteUses(at now: Date) {
+        directPasteUses.removeAll { $0.isExpired(at: now) }
+    }
+
     private func removePendingPromotion(itemID: UUID) {
         pendingNextOpenPromotions.removeAll { $0.itemID == itemID }
+    }
+
+    private func itemIDs(matchingSignature signature: String) -> Set<UUID> {
+        var ids = Set<UUID>()
+        if let inFlight = inFlightCaptures[signature] {
+            ids.insert(inFlight.token.id)
+        }
+
+        let descriptor = FetchDescriptor<ClipboardItem>()
+        let items = (try? modelContext.fetch(descriptor)) ?? []
+        for item in items where item.pasteboardSignature == signature {
+            ids.insert(item.id)
+        }
+        return ids
     }
 
     private func removeInFlightCaptures(itemIDs: Set<UUID>) {

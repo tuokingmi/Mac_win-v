@@ -21,6 +21,15 @@ final class PasteboardSuppressionTests: XCTestCase {
         XCTAssertTrue(store.consumeCaptureSuppression(changeCount: 21))
     }
 
+    func testSuppressionCanBeCheckedWithoutConsuming() throws {
+        let store = try makeTestStore()
+
+        store.suppressCapture(changeCount: 25)
+        XCTAssertTrue(store.isCaptureSuppressed(changeCount: 25))
+        XCTAssertTrue(store.consumeCaptureSuppression(changeCount: 25))
+        XCTAssertFalse(store.isCaptureSuppressed(changeCount: 25))
+    }
+
     func testSkippingToLatestInternalChangeStillSuppressesAndDropsOlderCounts() throws {
         let store = try makeTestStore()
 
