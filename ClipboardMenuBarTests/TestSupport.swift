@@ -1,5 +1,5 @@
 import AppKit
-@testable import ClipboardMenuBar
+@testable import Mac_win_v
 import SwiftData
 import XCTest
 
@@ -20,7 +20,7 @@ func makeTestEnvironment() throws -> TestClipboardEnvironment {
     let schema = Schema([ClipboardItem.self])
     let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
     let container = try ModelContainer(for: schema, configurations: [configuration])
-    let imageStorage = ImageStorage(bundleIdentifier: "ClipboardMenuBarTests.\(UUID().uuidString)")
+    let imageStorage = ImageStorage(bundleIdentifier: "Mac_win_vTests.\(UUID().uuidString)")
     let store = ClipboardStore(modelContext: container.mainContext, imageStorage: imageStorage, modelContainer: container)
     return TestClipboardEnvironment(container: container, store: store, imageStorage: imageStorage)
 }
@@ -57,7 +57,7 @@ func makeImageData() -> Data {
 
 @MainActor
 func makeStoredImagePayload() throws -> StoredImagePayload {
-    let storage = ImageStorage(bundleIdentifier: "ClipboardMenuBarTests.Payload.\(UUID().uuidString)")
+    let storage = ImageStorage(bundleIdentifier: "Mac_win_vTests.Payload.\(UUID().uuidString)")
     return try storage.store(imageData: makeImageData())
 }
 

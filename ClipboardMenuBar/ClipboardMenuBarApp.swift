@@ -4,6 +4,12 @@ import ServiceManagement
 import SwiftData
 import SwiftUI
 
+enum AppIdentity {
+    static let displayName = "Mac_win+v"
+    static let bundleIdentifier = "com.example.Mac-win-v"
+    static let previousBundleIdentifier = "com.example.ClipboardMenuBar"
+}
+
 @MainActor
 final class AppServices: ObservableObject {
     static let shared = AppServices()
@@ -39,7 +45,7 @@ final class AppServices: ObservableObject {
         }
 
         let context = modelContainer.mainContext
-        let imageStorage = ImageStorage(bundleIdentifier: Bundle.main.bundleIdentifier ?? "ClipboardMenuBar")
+        let imageStorage = ImageStorage(bundleIdentifier: Self.currentBundleIdentifier())
         let store = ClipboardStore(modelContext: context, imageStorage: imageStorage)
         let pasteService = PasteService()
         let panelController = PanelController(clipboardStore: store, pasteService: pasteService, appServices: self)
@@ -128,20 +134,49 @@ final class AppServices: ObservableObject {
     }
 
     private static func persistentStoreURL() throws -> URL {
-        let bundleIdentifier = Bundle.main.bundleIdentifier ?? "ClipboardMenuBar"
-        let fileManager = FileManager.default
-        let baseDirectory = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let appDirectory = baseDirectory.appendingPathComponent(bundleIdentifier, isDirectory: true)
-        try fileManager.createDirectory(at: appDirectory, withIntermediateDirectories: true)
+        let appDirectory = try applicationSupportDirectory(
+            for: currentBundleIdentifier(),
+            baseDirectory: applicationSupportBaseDirectory(),
+            create: true
+        )
         return appDirectory.appendingPathComponent("ClipboardHistory.store", isDirectory: false)
     }
 
-    private static func migrateLegacyStoreIfNeeded(to storeURL: URL) throws {
+    private static func currentBundleIdentifier() -> String {
+        Bundle.main.bundleIdentifier ?? AppIdentity.bundleIdentifier
+    }
+
+    private static func applicationSupportBaseDirectory() -> URL {
         let fileManager = FileManager.default
+        return fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+    }
+
+    private static func applicationSupportDirectory(
+        for bundleIdentifier: String,
+        baseDirectory: URL,
+        create: Bool
+    ) throws -> URL {
+        let fileManager = FileManager.default
+        let appDirectory = baseDirectory.appendingPathComponent(bundleIdentifier, isDirectory: true)
+        if create {
+            try fileManager.createDirectory(at: appDirectory, withIntermediateDirectories: true)
+        }
+        return appDirectory
+    }
+
+    static func migrateLegacyStoreIfNeeded(
+        to storeURL: URL,
+        baseDirectory: URL? = nil
+    ) throws {
+        let fileManager = FileManager.default
+        let baseDirectory = baseDirectory ?? applicationSupportBaseDirectory()
 
         guard fileManager.fileExists(atPath: storeURL.path) == false else { return }
 
-        let baseDirectory = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        if try migratePreviousBundleDataIfNeeded(to: storeURL, baseDirectory: baseDirectory) {
+            return
+        }
+
         let legacyStoreURL = baseDirectory.appendingPathComponent("default.store", isDirectory: false)
 
         guard fileManager.fileExists(atPath: legacyStoreURL.path),
@@ -156,6 +191,44 @@ final class AppServices: ObservableObject {
             guard fileManager.fileExists(atPath: sourceURL.path) else { continue }
             try fileManager.copyItem(at: sourceURL, to: destinationURL)
         }
+    }
+
+    private static func migratePreviousBundleDataIfNeeded(to storeURL: URL, baseDirectory: URL) throws -> Bool {
+        let fileManager = FileManager.default
+        let previousDirectory = try applicationSupportDirectory(
+            for: AppIdentity.previousBundleIdentifier,
+            baseDirectory: baseDirectory,
+            create: false
+        )
+        let previousStoreURL = previousDirectory.appendingPathComponent("ClipboardHistory.store", isDirectory: false)
+
+        guard fileManager.fileExists(atPath: previousStoreURL.path) else {
+            return false
+        }
+
+        for suffix in ["", "-wal", "-shm"] {
+            let sourceURL = URL(fileURLWithPath: previousStoreURL.path + suffix)
+            let destinationURL = URL(fileURLWithPath: storeURL.path + suffix)
+
+            guard fileManager.fileExists(atPath: sourceURL.path),
+                  fileManager.fileExists(atPath: destinationURL.path) == false else {
+                continue
+            }
+            try fileManager.copyItem(at: sourceURL, to: destinationURL)
+        }
+
+        let previousImagesURL = previousDirectory.appendingPathComponent("Images", isDirectory: true)
+        let currentImagesURL = storeURL
+            .deletingLastPathComponent()
+            .appendingPathComponent("Images", isDirectory: true)
+        var isDirectory: ObjCBool = false
+        if fileManager.fileExists(atPath: previousImagesURL.path, isDirectory: &isDirectory),
+           isDirectory.boolValue,
+           fileManager.fileExists(atPath: currentImagesURL.path) == false {
+            try fileManager.copyItem(at: previousImagesURL, to: currentImagesURL)
+        }
+
+        return true
     }
 
     private static func legacyStoreContainsClipboardItems(at storeURL: URL) -> Bool {
@@ -203,7 +276,7 @@ struct SettingsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("ClipboardMenuBar")
+            Text(AppIdentity.displayName)
                 .font(.title2.weight(.semibold))
 
             Toggle(
@@ -266,7 +339,7 @@ struct ClipboardMenuBarApp: App {
         MenuBarExtra {
             MenuBarContent(services: services)
         } label: {
-            Label("ClipboardMenuBar", systemImage: "clipboard")
+            Label(AppIdentity.displayName, systemImage: "clipboard")
         }
         .modelContainer(services.modelContainer)
         .menuBarExtraStyle(.menu)

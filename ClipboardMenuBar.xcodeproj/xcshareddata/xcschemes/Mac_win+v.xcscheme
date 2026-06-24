@@ -16,8 +16,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "A0000000000000000000001A"
-               BuildableName = "ClipboardMenuBar.app"
-               BlueprintName = "ClipboardMenuBar"
+               BuildableName = "Mac_win+v.app"
+               BlueprintName = "Mac_win+v"
                ReferencedContainer = "container:ClipboardMenuBar.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -30,8 +30,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "B0000000000000000000001A"
-               BuildableName = "ClipboardMenuBarTests.xctest"
-               BlueprintName = "ClipboardMenuBarTests"
+               BuildableName = "Mac_win_vTests.xctest"
+               BlueprintName = "Mac_win_vTests"
                ReferencedContainer = "container:ClipboardMenuBar.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -50,8 +50,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "B0000000000000000000001A"
-               BuildableName = "ClipboardMenuBarTests.xctest"
-               BlueprintName = "ClipboardMenuBarTests"
+               BuildableName = "Mac_win_vTests.xctest"
+               BlueprintName = "Mac_win_vTests"
                ReferencedContainer = "container:ClipboardMenuBar.xcodeproj">
             </BuildableReference>
          </TestableReference>
@@ -72,8 +72,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "A0000000000000000000001A"
-            BuildableName = "ClipboardMenuBar.app"
-            BlueprintName = "ClipboardMenuBar"
+            BuildableName = "Mac_win+v.app"
+            BlueprintName = "Mac_win+v"
             ReferencedContainer = "container:ClipboardMenuBar.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -89,8 +89,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "A0000000000000000000001A"
-            BuildableName = "ClipboardMenuBar.app"
-            BlueprintName = "ClipboardMenuBar"
+            BuildableName = "Mac_win+v.app"
+            BlueprintName = "Mac_win+v"
             ReferencedContainer = "container:ClipboardMenuBar.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

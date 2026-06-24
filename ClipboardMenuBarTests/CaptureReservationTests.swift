@@ -1,4 +1,4 @@
-@testable import ClipboardMenuBar
+@testable import Mac_win_v
 import XCTest
 
 @MainActor
@@ -75,5 +75,27 @@ final class CaptureReservationTests: XCTestCase {
         XCTAssertEqual(items.map(\.id), [tokenB.id, tokenA.id])
         XCTAssertEqual(items.first?.createdAt, base.addingTimeInterval(10))
         XCTAssertEqual(items.last?.createdAt, base)
+    }
+
+    func testThumbnailImageFallsBackToStoredImageWhenPreviewDataIsMissing() throws {
+        let environment = try makeTestEnvironment()
+        let payload = try makeStoredImagePayload(in: environment.imageStorage)
+
+        let imageItem = ClipboardItem(
+            kind: .image,
+            imagePath: payload.relativePath,
+            imageWidth: payload.size.width,
+            imageHeight: payload.size.height,
+            previewData: nil,
+            pasteboardSignature: "image-thumbnail"
+        )
+        let textItem = ClipboardItem(
+            kind: .text,
+            textContent: "Text",
+            pasteboardSignature: "text-thumbnail"
+        )
+
+        XCTAssertNotNil(environment.store.thumbnailImage(for: imageItem))
+        XCTAssertNil(environment.store.thumbnailImage(for: textItem))
     }
 }

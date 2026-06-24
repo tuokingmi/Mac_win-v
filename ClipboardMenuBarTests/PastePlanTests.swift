@@ -1,4 +1,4 @@
-@testable import ClipboardMenuBar
+@testable import Mac_win_v
 import XCTest
 
 @MainActor

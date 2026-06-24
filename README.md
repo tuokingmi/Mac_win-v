@@ -1,4 +1,4 @@
-# ClipboardMenuBar
+# Mac_win+v
 
 一款轻量级 macOS 菜单栏剪贴板历史管理工具，基于 SwiftUI 和 SwiftData 构建。
 
@@ -23,7 +23,7 @@
 用 Xcode 打开 `ClipboardMenuBar.xcodeproj` 直接运行，或通过命令行构建：
 
 ```bash
-xcodebuild -project ClipboardMenuBar.xcodeproj -scheme ClipboardMenuBar build
+xcodebuild -project ClipboardMenuBar.xcodeproj -scheme Mac_win+v build
 ```
 
 ## 使用方法
@@ -35,6 +35,10 @@ xcodebuild -project ClipboardMenuBar.xcodeproj -scheme ClipboardMenuBar build
 5. 右键条目可置顶或删除
 
 面板打开期间产生的新复制不会重排当前列表，它会进入下一次打开的待提升队列；如果下一次打开时已经满 3 分钟，则按普通置顶/历史排序显示。
+
+## 升级说明
+
+应用 Bundle ID 已改为 `com.example.Mac-win-v`。首次以 `Mac_win+v` 启动时，会从旧目录 `~/Library/Application Support/com.example.ClipboardMenuBar/` 复制历史数据库和 `Images/` 图片目录到新目录；旧目录会保留，不会自动删除。
 
 ## 许可证
 

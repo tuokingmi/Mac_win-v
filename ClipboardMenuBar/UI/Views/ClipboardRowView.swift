@@ -1,12 +1,32 @@
+import AppKit
 import SwiftUI
+
+struct ClipboardImageThumbnailView: View {
+    let image: NSImage?
+
+    var body: some View {
+        Group {
+            if let image {
+                Image(nsImage: image)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 52, height: 52)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            }
+        }
+    }
+}
 
 struct ClipboardRowView: View {
     let item: ClipboardItem
+    let thumbnailImage: NSImage?
     let isFocused: Bool
     let isMultiSelected: Bool
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
+            ClipboardImageThumbnailView(image: thumbnailImage)
+
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 4) {
                     if item.isPinned {

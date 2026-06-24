@@ -131,6 +131,7 @@ struct ClipboardListView: View {
                                 } label: {
                                     ClipboardRowView(
                                         item: item,
+                                        thumbnailImage: clipboardStore.thumbnailImage(for: item),
                                         isFocused: selectionState.focusedItemID == item.id,
                                         isMultiSelected: selectionState.selectedItemIDs.contains(item.id)
                                     )

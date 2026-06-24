@@ -69,6 +69,18 @@ final class ClipboardStore: ObservableObject {
         return try? modelContext.fetch(descriptor).first
     }
 
+    func thumbnailImage(for item: ClipboardItem) -> NSImage? {
+        guard item.kind == .image else { return nil }
+
+        if let previewData = item.previewData,
+           let previewImage = NSImage(data: previewData) {
+            return previewImage
+        }
+
+        guard let imagePath = item.imagePath else { return nil }
+        return imageStorage.loadImage(relativePath: imagePath)
+    }
+
     func suppressCapture(changeCount: Int) {
         internalPasteboardChangeCounts.insert(changeCount)
     }
