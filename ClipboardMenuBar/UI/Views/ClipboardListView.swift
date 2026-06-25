@@ -55,12 +55,16 @@ struct ClipboardListView: View {
         case success
     }
 
+    private final class VSelectionModeState {
+        var isActive = false
+    }
+
     @ObservedObject var clipboardStore: ClipboardStore
     @ObservedObject var panelController: PanelController
     let activePromotions: [NextOpenPromotion]
 
     @State private var selectionState = ClipboardSelectionState()
-    @State private var isVSelectionModeActive = false
+    @State private var vSelectionMode = VSelectionModeState()
     @State private var clearButtonState: ClearButtonState = .idle
     @State private var clearFeedbackTask: Task<Void, Never>?
 
@@ -191,7 +195,7 @@ struct ClipboardListView: View {
             clearFeedbackTask?.cancel()
             clearFeedbackTask = nil
             clearButtonState = .idle
-            isVSelectionModeActive = false
+            vSelectionMode.isActive = false
         }
         .onChange(of: itemIDs) { _, newIDs in
             selectionState.repair(orderedIDs: newIDs)
@@ -199,7 +203,7 @@ struct ClipboardListView: View {
     }
 
     private func handleRowClick(_ item: ClipboardItem) {
-        if isVSelectionModeActive {
+        if vSelectionMode.isActive {
             selectionState.toggleSelection(itemID: item.id)
             return
         }
@@ -218,7 +222,7 @@ struct ClipboardListView: View {
 
     private func handleKeyDown(_ event: NSEvent) -> Bool {
         if event.keyCode == 9 {
-            isVSelectionModeActive = true
+            vSelectionMode.isActive = true
             return true
         }
 
@@ -255,7 +259,7 @@ struct ClipboardListView: View {
 
     private func handleKeyUp(_ event: NSEvent) -> Bool {
         guard event.keyCode == 9 else { return false }
-        isVSelectionModeActive = false
+        vSelectionMode.isActive = false
         return true
     }
 
