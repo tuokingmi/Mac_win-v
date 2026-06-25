@@ -56,7 +56,7 @@ final class AppServices: ObservableObject {
             switch event {
             case .pressed:
                 panelController?.handleOptionVPressed()
-            case .vKeyReleased:
+            case .released:
                 panelController?.handleOptionVReleased()
             }
         }

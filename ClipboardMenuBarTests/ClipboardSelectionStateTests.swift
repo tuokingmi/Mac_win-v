@@ -1,8 +1,15 @@
+import Carbon
 @testable import Mac_win_v
 import XCTest
 
 @MainActor
 final class ClipboardSelectionStateTests: XCTestCase {
+    func testCarbonHotKeyEventKindMapping() {
+        XCTAssertEqual(HotKeyEvent.fromCarbonEventKind(UInt32(kEventHotKeyPressed)), .pressed)
+        XCTAssertEqual(HotKeyEvent.fromCarbonEventKind(UInt32(kEventHotKeyReleased)), .released)
+        XCTAssertNil(HotKeyEvent.fromCarbonEventKind(0))
+    }
+
     func testVSelectionTogglesAndOrdinaryClickClearsSelection() {
         let a = UUID()
         let b = UUID()
