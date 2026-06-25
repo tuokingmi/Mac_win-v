@@ -52,8 +52,13 @@ final class AppServices: ObservableObject {
         let panelController = PanelController(clipboardStore: store, pasteService: pasteService, appServices: self)
         let monitor = ClipboardMonitor(clipboardStore: store, imageStorage: imageStorage)
         let directPasteObserver = DirectPasteObserver(clipboardStore: store, panelController: panelController)
-        let hotKeyManager = HotKeyManager { [weak panelController] in
-            panelController?.toggle()
+        let hotKeyManager = HotKeyManager { [weak panelController] event in
+            switch event {
+            case .pressed:
+                panelController?.handleOptionVPressed()
+            case .vKeyReleased:
+                panelController?.handleOptionVReleased()
+            }
         }
 
         self.clipboardStore = store

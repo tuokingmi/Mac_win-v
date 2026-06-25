@@ -22,6 +22,28 @@ final class ClipboardSelectionStateTests: XCTestCase {
         XCTAssertTrue(state.selectedItemIDs.isEmpty)
     }
 
+    func testRowClickUsesInputModeForSelection() {
+        let a = UUID()
+        let b = UUID()
+        var state = ClipboardSelectionState()
+
+        let selectionAction = state.handleRowClick(
+            itemID: a,
+            isVSelectionModeActive: true
+        )
+        XCTAssertEqual(selectionAction, .updateSelection)
+        XCTAssertEqual(state.focusedItemID, a)
+        XCTAssertEqual(state.selectedItemIDs, [a])
+
+        let pasteAction = state.handleRowClick(
+            itemID: b,
+            isVSelectionModeActive: false
+        )
+        XCTAssertEqual(pasteAction, .pasteSingleItem)
+        XCTAssertEqual(state.focusedItemID, b)
+        XCTAssertTrue(state.selectedItemIDs.isEmpty)
+    }
+
     func testArrowFocusDoesNotClearSelection() {
         let ids = [UUID(), UUID(), UUID()]
         var state = ClipboardSelectionState(focusedItemID: ids[0], selectedItemIDs: [ids[2]])

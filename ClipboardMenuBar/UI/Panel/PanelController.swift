@@ -6,6 +6,7 @@ final class PanelController: ObservableObject {
     private let clipboardStore: ClipboardStore
     private let pasteService: PasteService
     private unowned let appServices: AppServices
+    private let inputState = ClipboardPanelInputState()
     private lazy var panel: ClipboardPanel = makePanel()
     private var pasteTarget = PasteTarget(application: nil, focusedElement: nil)
     private var activeSessionPromotions: [NextOpenPromotion] = []
@@ -41,12 +42,25 @@ final class PanelController: ObservableObject {
         }
     }
 
-    func show() {
+    func handleOptionVPressed() {
+        if panel.isVisible {
+            hide()
+        } else {
+            show(initialVSelectionModeActive: true)
+        }
+    }
+
+    func handleOptionVReleased() {
+        inputState.isVSelectionModeActive = false
+    }
+
+    func show(initialVSelectionModeActive: Bool = false) {
         if panel.isVisible {
             panel.makeKey()
             return
         }
 
+        inputState.isVSelectionModeActive = initialVSelectionModeActive
         appServices.refreshSystemState()
         pasteTarget = pasteService.captureTarget(for: NSWorkspace.shared.frontmostApplication)
         activeSessionPromotions = clipboardStore.consumeEligibleNextOpenPromotions(at: .now)
@@ -83,6 +97,7 @@ final class PanelController: ObservableObject {
         let rootView = ClipboardListView(
             clipboardStore: clipboardStore,
             panelController: self,
+            inputState: inputState,
             activePromotions: activeSessionPromotions
         )
         panel.contentView = NSHostingView(rootView: rootView)
@@ -92,6 +107,7 @@ final class PanelController: ObservableObject {
         let rootView = ClipboardListView(
             clipboardStore: clipboardStore,
             panelController: self,
+            inputState: inputState,
             activePromotions: []
         )
         let panel = ClipboardPanel(initialContentView: NSHostingView(rootView: rootView))
@@ -102,6 +118,7 @@ final class PanelController: ObservableObject {
     }
 
     private func finishPresentationSession() {
+        inputState.isVSelectionModeActive = false
         clipboardStore.finishPresentationSession(promotions: activeSessionPromotions, at: .now)
         activeSessionPromotions.removeAll()
         pasteTarget = PasteTarget(application: nil, focusedElement: nil)

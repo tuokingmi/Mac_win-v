@@ -1,4 +1,14 @@
+import Carbon
 import SwiftUI
+
+final class ClipboardPanelInputState: ObservableObject {
+    @Published var isVSelectionModeActive = false
+}
+
+enum ClipboardRowClickAction: Equatable {
+    case updateSelection
+    case pasteSingleItem
+}
 
 struct ClipboardSelectionState: Equatable {
     var focusedItemID: UUID?
@@ -20,6 +30,19 @@ struct ClipboardSelectionState: Equatable {
     mutating func ordinaryClick(itemID: UUID) {
         focusedItemID = itemID
         selectedItemIDs.removeAll()
+    }
+
+    mutating func handleRowClick(
+        itemID: UUID,
+        isVSelectionModeActive: Bool
+    ) -> ClipboardRowClickAction {
+        if isVSelectionModeActive {
+            toggleSelection(itemID: itemID)
+            return .updateSelection
+        }
+
+        ordinaryClick(itemID: itemID)
+        return .pasteSingleItem
     }
 
     mutating func moveFocus(direction: Int, orderedIDs: [UUID]) {
@@ -55,16 +78,12 @@ struct ClipboardListView: View {
         case success
     }
 
-    private final class VSelectionModeState {
-        var isActive = false
-    }
-
     @ObservedObject var clipboardStore: ClipboardStore
     @ObservedObject var panelController: PanelController
+    @ObservedObject var inputState: ClipboardPanelInputState
     let activePromotions: [NextOpenPromotion]
 
     @State private var selectionState = ClipboardSelectionState()
-    @State private var vSelectionMode = VSelectionModeState()
     @State private var clearButtonState: ClearButtonState = .idle
     @State private var clearFeedbackTask: Task<Void, Never>?
 
@@ -195,7 +214,6 @@ struct ClipboardListView: View {
             clearFeedbackTask?.cancel()
             clearFeedbackTask = nil
             clearButtonState = .idle
-            vSelectionMode.isActive = false
         }
         .onChange(of: itemIDs) { _, newIDs in
             selectionState.repair(orderedIDs: newIDs)
@@ -203,12 +221,15 @@ struct ClipboardListView: View {
     }
 
     private func handleRowClick(_ item: ClipboardItem) {
-        if vSelectionMode.isActive {
-            selectionState.toggleSelection(itemID: item.id)
+        let action = selectionState.handleRowClick(
+            itemID: item.id,
+            isVSelectionModeActive: inputState.isVSelectionModeActive
+        )
+
+        if action == .updateSelection {
             return
         }
 
-        selectionState.ordinaryClick(itemID: item.id)
         _ = panelController.paste(item)
     }
 
@@ -221,8 +242,8 @@ struct ClipboardListView: View {
     }
 
     private func handleKeyDown(_ event: NSEvent) -> Bool {
-        if event.keyCode == 9 {
-            vSelectionMode.isActive = true
+        if event.keyCode == UInt16(kVK_ANSI_V) {
+            inputState.isVSelectionModeActive = true
             return true
         }
 
@@ -258,8 +279,8 @@ struct ClipboardListView: View {
     }
 
     private func handleKeyUp(_ event: NSEvent) -> Bool {
-        guard event.keyCode == 9 else { return false }
-        vSelectionMode.isActive = false
+        guard event.keyCode == UInt16(kVK_ANSI_V) else { return false }
+        inputState.isVSelectionModeActive = false
         return true
     }
 
