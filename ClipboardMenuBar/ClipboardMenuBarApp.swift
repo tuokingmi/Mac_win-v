@@ -73,6 +73,11 @@ final class AppServices: ObservableObject {
         accessibilityEnabled = PasteService.hasAccessibilityPermission(prompt: false)
         refreshLaunchAtLoginState()
         if oldAccessibility != accessibilityEnabled {
+            if accessibilityEnabled {
+                directPasteObserver?.start()
+            } else {
+                directPasteObserver?.stop()
+            }
             panelController?.notifyPermissionStateChanged()
         }
     }
